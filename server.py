@@ -5,6 +5,7 @@ import sqlite3
 
 from models.user import User, UserForLogin, ConnectedUser
 from models.column import Column,ColumnForDisplay
+from models.task import Task,TaskforDisplay
 
 DATABASE = '.data/db.sqlite'
 app = Flask(__name__)
@@ -153,7 +154,45 @@ def posts_post():
     db.commit()
 
     return "ok", 201
+  
 
+@app.route("/add-task", methods=['POST'])
+def add_task_post(): 
+    description = request.form.get('description')
+    task = Task(description=description)
+    db = get_db()
+    cur = db.cursor()
+    try:
+        task.insert(cur)
+    except sqlite3.IntegrityError:
+        return render_template(
+          'index.html',
+          error_msg="This task  already exist.",
+        )
+    
+    db.commit()
+     
+
+  
+
+  
+#/add-column  
+@app.route("/add-column ", methods=['POST'])
+def add_column_post():  
+  name = request.form.get('columnName')
+  
+  column = Column(name=name,idTable='newcol')
+  db = get_db()
+  cur = db.cursor()
+  try:
+      user.insert(cur)
+  except sqlite3.IntegrityError:
+        return render_template(
+          'index.html',
+          error_msg="This column  is already created.",
+        ) 
+  db.commit()
+  
 ## Rowid -> User
 CONNECTED_USERS = {}
 
@@ -177,6 +216,7 @@ def broadcast_user_list(cursor):
 def broadcast_column_list(cursor):
     io.emit('columnlist', [
         { "columnName": column.name,
+          #"idTable": colum.idTable,
           "date": column.date.strftime("%m/%d/%Y, %H:%M:%S"),
         }
         for column in ColumnForDisplay.getAll(cursor)
@@ -184,6 +224,16 @@ def broadcast_column_list(cursor):
   , broadcast=True)
 
     
+ 
+def broadcast_task_list(cursor):
+    io.emit('tasklist', [
+        { "description": task.description
+        }
+        for task in TaskforDisplay.getAll(cursor)
+      ]
+  , broadcast=True)
+
+       
     
 @io.on('connect')
 def ws_connect():
@@ -198,6 +248,7 @@ def ws_connect():
   
     broadcast_user_list(cur)
     broadcast_column_list(cur)
+    broadcast_task_list(cur) 
 
 @io.on('disconnect')
 def ws_disconnect():

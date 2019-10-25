@@ -27,6 +27,13 @@ socket.on('columnlist', function(columnlist){
   app.ports.columnlistPort.send(columnlist);
 }); 
   
+  
+socket.on('tasklist', function(tasklist){
+  console.log("tasklist received:", tasklist);
+  app.ports.tasklistPort.send(tasklist);
+});  
+  
+  
 socket.on('postlist', function(postlist){
   console.log("postlist received:", postlist);
   app.ports.postlistPort.send(postlist);

@@ -1,58 +1,58 @@
 import datetime
 
 
-class Column:
-    def __init__(self, name, idTable):
+class Table:
+    def __init__(self, name, idUser):
         self.name = name
-        self.idTable = idTable
+        self.idUser = idUser
         self.timestamp = datetime.datetime.now().timestamp()
 
     def insert(self, cursor):
         cursor.execute('''
-          INSERT INTO columns 
-          ( columnName
-          , idTable
+          INSERT INTO tables 
+          ( tableName
+          , idUser
           , timestamp
           )
           VALUES 
           ( ?, ?, ?)
-        ''', (self.name, self.idTable, self.timestamp)
+        ''', (self.name, self.idUser, self.timestamp)
         )
     
         
     def __repr__(self):
-        return "[columns < %s > created in table (#%s) at %s]"%(
+        return "[tables < %s > created by User (#%s) at %s]"%(
             self.name,
-            self.idTable,
+            self.idUser,
             str(datetime.datetime.fromtimestamp(self.timestamp))
         )
     
     
     @classmethod
     def create_table(cls, cursor):
-        cursor.execute('DROP TABLE IF EXISTS columns')
+        cursor.execute('DROP TABLE IF EXISTS tables')
 
         cursor.execute('''
-        CREATE TABLE columns
-        ( columnName TEXT NOT NULL PRIMARY KEY
-        , idTable TEXT NOT NULL
+        CREATE TABLE tables
+        ( tableName TEXT NOT NULL PRIMARY KEY
+        , idUser TEXT NOT NULL
         , timestamp DOUBLE
-        , FOREIGN KEY (idTable) REFERENCES tables(tableName)
+        , FOREIGN KEY (idUser) REFERENCES users(email)
         )''')
 
         
-class ColumnForDisplay:
+class TableForDisplay:
     '''pour les var du constructeur verifie type alias colonne en main.elm'''
     def __init__(self, row):
-        self.name = row['columnName']
-        #self.idTable = row['idTable']
+        self.name = row['tableName'] 
+        #self.idUser = row['idUser'] 
         self.date = datetime.datetime.fromtimestamp(row['timestamp'])
    
     @classmethod
     def getAll(cls, cursor):
       cursor.execute('''
-          SELECT  columnName, timestamp 
-          FROM columns
+          SELECT  tableName, timestamp 
+          FROM tables
           ORDER BY timestamp DESC
       ''')
       return [ cls(row) for row in cursor.fetchall() ]
