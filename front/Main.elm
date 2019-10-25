@@ -11,16 +11,18 @@ import Json.Encode as Encode
 
 port userlistPort : (Value -> msg) -> Sub msg
 
-port postlistPort : (Value -> msg) -> Sub msg
-
 port columnlistPort : (Value -> msg) -> Sub msg
 
+port tasklistPort : (Value -> msg) -> Sub msg
+
+port postlistPort : (Value -> msg) -> Sub msg
 
 
 type alias Model =
     { columns : List Column
     , posts : List Post
     , users : List User
+    , tasks : List Task
     , newPost : String
     }
 
@@ -35,6 +37,13 @@ type alias Column =
     { columnName : String
     , columnDate : String
     }
+    
+    
+type alias Task =
+    { 
+      description : String 
+    }    
+    
 
 type alias User =
     { first_name : String
@@ -52,12 +61,15 @@ type UserStatus
 type Msg
     = GotUserlist (List User)
     | GotColumns (List Column)
+    | GotTasks (List Task)
     | GotPosts (List Post)
     | DecodeError Decode.Error
     | PostUpdated String
     | PostSubmitted
     | NoOp
-
+    
+    
+    
 
 userDecoder : Decoder User
 userDecoder =
@@ -97,7 +109,15 @@ columnDecoder : Decoder Column
 columnDecoder =
     Decode.map2 Column
         (Decode.field "columnName" Decode.string)
-        (Decode.field "columnDate" Decode.string)
+        (Decode.field "date" Decode.string)
+
+
+    
+taskDecoder : Decoder Task
+taskDecoder =
+    Decode.map Task
+        (Decode.field "description" Decode.string)
+        
 
 
 decodeExternalUserlist : Value -> Msg
@@ -128,11 +148,23 @@ decodeExternalColumnlist val =
             DecodeError err
 
 
+decodeExternalTasklist : Value -> Msg
+decodeExternalTasklist val =
+    case Decode.decodeValue (Decode.list taskDecoder) val of
+        Ok tasklist ->
+            GotTasks tasklist
+
+        Err err ->
+            DecodeError err
+
+
+
 initialModel : Model
 initialModel =
     { posts = []
     , users = []
     , columns=[]
+    , tasks = []
     , newPost = ""
     }
 
@@ -151,6 +183,9 @@ update msg model =
 
         PostUpdated newPost ->
             ( { model | newPost = newPost }, Cmd.none )
+        
+        GotTasks tasks ->
+            ( { model | tasks = tasks }, Cmd.none )
 
         PostSubmitted ->
             if model.newPost == "" then
@@ -201,7 +236,7 @@ view model =
                 (List.map viewPost model.posts)
             ]
         , section [ id "columns" ]
-          [ Html.form [ action "/add-column", class "columns_form", method "POST" ]
+          [ Html.form [ action "/add-column/", class "columns_form", method "POST"]
               [ label []
                 [ text "columns name: "
                 , input [ name "columnName", type_ "text" ]
@@ -213,7 +248,25 @@ view model =
               ]
               , ul [ id "columns_list" ]
               (List.map viewColumn model.columns)
+              
           ]
+          
+        , section [ id "tasks" ]
+          [ Html.form [ action "/add-task", class "tasks_form", method "POST" ]
+              [ label []
+                [ text "task descreption : "
+                , input [ name "description", type_ "text" ]
+                []
+                ]
+                , input [ name "", type_ "submit", value "+Tsk+" ]
+                []
+                , text "  "
+              ]
+              , ul [ id "tasks_list" ]
+              (List.map viewTask model.tasks)
+          ]
+          
+          
         ]
 
 
@@ -253,13 +306,24 @@ viewColumn column =
         ]
         
 
+viewTask : Task -> Html Msg
+viewTask task =
+    li [ class "tasks" ]
+        [ div [ class "task_header" ]
+            [ span [ class "task_descrip" ]
+                [ text task.description ]
+            ]
+        ]
+        
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ userlistPort decodeExternalUserlist
         , postlistPort decodeExternalPostlist 
-        , columnlistPort decodeExternalColumnlist]
+        , columnlistPort decodeExternalColumnlist
+        , tasklistPort decodeExternalTasklist]
 
 
 main : Program () Model Msg

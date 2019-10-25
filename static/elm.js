@@ -10599,7 +10599,7 @@ var author$project$Register$main = elm$browser$Browser$element(
 		update: author$project$Register$update,
 		view: author$project$Register$view
 	});
-var author$project$Main$initialModel = {columns: _List_Nil, newPost: '', posts: _List_Nil, users: _List_Nil};
+var author$project$Main$initialModel = {columns: _List_Nil, newPost: '', posts: _List_Nil, tasks: _List_Nil, users: _List_Nil};
 var author$project$Main$columnlistPort = _Platform_incomingPort('columnlistPort', elm$json$Json$Decode$value);
 var author$project$Main$DecodeError = function (a) {
 	return {$: 'DecodeError', a: a};
@@ -10615,7 +10615,7 @@ var author$project$Main$columnDecoder = A3(
 	elm$json$Json$Decode$map2,
 	author$project$Main$Column,
 	A2(elm$json$Json$Decode$field, 'columnName', elm$json$Json$Decode$string),
-	A2(elm$json$Json$Decode$field, 'columnDate', elm$json$Json$Decode$string));
+	A2(elm$json$Json$Decode$field, 'date', elm$json$Json$Decode$string));
 var author$project$Main$decodeExternalColumnlist = function (val) {
 	var _n0 = A2(
 		elm$json$Json$Decode$decodeValue,
@@ -10650,6 +10650,29 @@ var author$project$Main$decodeExternalPostlist = function (val) {
 	if (_n0.$ === 'Ok') {
 		var postlist = _n0.a;
 		return author$project$Main$GotPosts(postlist);
+	} else {
+		var err = _n0.a;
+		return author$project$Main$DecodeError(err);
+	}
+};
+var author$project$Main$GotTasks = function (a) {
+	return {$: 'GotTasks', a: a};
+};
+var author$project$Main$Task = function (description) {
+	return {description: description};
+};
+var author$project$Main$taskDecoder = A2(
+	elm$json$Json$Decode$map,
+	author$project$Main$Task,
+	A2(elm$json$Json$Decode$field, 'description', elm$json$Json$Decode$string));
+var author$project$Main$decodeExternalTasklist = function (val) {
+	var _n0 = A2(
+		elm$json$Json$Decode$decodeValue,
+		elm$json$Json$Decode$list(author$project$Main$taskDecoder),
+		val);
+	if (_n0.$ === 'Ok') {
+		var tasklist = _n0.a;
+		return author$project$Main$GotTasks(tasklist);
 	} else {
 		var err = _n0.a;
 		return author$project$Main$DecodeError(err);
@@ -10702,6 +10725,7 @@ var author$project$Main$decodeExternalUserlist = function (val) {
 	}
 };
 var author$project$Main$postlistPort = _Platform_incomingPort('postlistPort', elm$json$Json$Decode$value);
+var author$project$Main$tasklistPort = _Platform_incomingPort('tasklistPort', elm$json$Json$Decode$value);
 var author$project$Main$userlistPort = _Platform_incomingPort('userlistPort', elm$json$Json$Decode$value);
 var author$project$Main$subscriptions = function (model) {
 	return elm$core$Platform$Sub$batch(
@@ -10709,7 +10733,8 @@ var author$project$Main$subscriptions = function (model) {
 			[
 				author$project$Main$userlistPort(author$project$Main$decodeExternalUserlist),
 				author$project$Main$postlistPort(author$project$Main$decodeExternalPostlist),
-				author$project$Main$columnlistPort(author$project$Main$decodeExternalColumnlist)
+				author$project$Main$columnlistPort(author$project$Main$decodeExternalColumnlist),
+				author$project$Main$tasklistPort(author$project$Main$decodeExternalTasklist)
 			]));
 };
 var author$project$Main$NoOp = {$: 'NoOp'};
@@ -10771,6 +10796,13 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{newPost: newPost}),
+					elm$core$Platform$Cmd$none);
+			case 'GotTasks':
+				var tasks = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{tasks: tasks}),
 					elm$core$Platform$Cmd$none);
 			case 'PostSubmitted':
 				return (model.newPost === '') ? _Utils_Tuple2(model, elm$core$Platform$Cmd$none) : _Utils_Tuple2(
@@ -10892,6 +10924,36 @@ var author$project$Main$viewPost = function (post) {
 				_List_fromArray(
 					[
 						elm$html$Html$text(post.content)
+					]))
+			]));
+};
+var author$project$Main$viewTask = function (task) {
+	return A2(
+		elm$html$Html$li,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('tasks')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('task_header')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						elm$html$Html$span,
+						_List_fromArray(
+							[
+								elm$html$Html$Attributes$class('task_descrip')
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text(task.description)
+							]))
 					]))
 			]));
 };
@@ -11028,7 +11090,7 @@ var author$project$Main$view = function (model) {
 						elm$html$Html$form,
 						_List_fromArray(
 							[
-								elm$html$Html$Attributes$action('/add-column'),
+								elm$html$Html$Attributes$action('/add-column/'),
 								elm$html$Html$Attributes$class('columns_form'),
 								elm$html$Html$Attributes$method('POST')
 							]),
@@ -11067,6 +11129,58 @@ var author$project$Main$view = function (model) {
 								elm$html$Html$Attributes$id('columns_list')
 							]),
 						A2(elm$core$List$map, author$project$Main$viewColumn, model.columns))
+					])),
+				A2(
+				elm$html$Html$section,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$id('tasks')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						elm$html$Html$form,
+						_List_fromArray(
+							[
+								elm$html$Html$Attributes$action('/add-task'),
+								elm$html$Html$Attributes$class('tasks_form'),
+								elm$html$Html$Attributes$method('POST')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								elm$html$Html$label,
+								_List_Nil,
+								_List_fromArray(
+									[
+										elm$html$Html$text('task descreption : '),
+										A2(
+										elm$html$Html$input,
+										_List_fromArray(
+											[
+												elm$html$Html$Attributes$name('description'),
+												elm$html$Html$Attributes$type_('text')
+											]),
+										_List_Nil)
+									])),
+								A2(
+								elm$html$Html$input,
+								_List_fromArray(
+									[
+										elm$html$Html$Attributes$name(''),
+										elm$html$Html$Attributes$type_('submit'),
+										elm$html$Html$Attributes$value('+Tsk+')
+									]),
+								_List_Nil),
+								elm$html$Html$text('  ')
+							])),
+						A2(
+						elm$html$Html$ul,
+						_List_fromArray(
+							[
+								elm$html$Html$Attributes$id('tasks_list')
+							]),
+						A2(elm$core$List$map, author$project$Main$viewTask, model.tasks))
 					]))
 			]));
 };
@@ -11080,5 +11194,5 @@ var author$project$Main$main = elm$browser$Browser$element(
 		view: author$project$Main$view
 	});
 _Platform_export({'Main':{'init':author$project$Main$main(
-	elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.0"},"types":{"message":"Main.Msg","aliases":{"Main.Column":{"args":[],"type":"{ columnName : String.String, columnDate : String.String }"},"Main.Post":{"args":[],"type":"{ authorName : String.String, content : String.String, date : String.String }"},"Main.User":{"args":[],"type":"{ first_name : String.String, last_name : String.String, status : Main.UserStatus, rowid : Basics.Int }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"}},"unions":{"Main.Msg":{"args":[],"tags":{"GotUserlist":["List.List Main.User"],"GotColumns":["List.List Main.Column"],"GotPosts":["List.List Main.Post"],"DecodeError":["Json.Decode.Error"],"PostUpdated":["String.String"],"PostSubmitted":[],"NoOp":[]}},"Main.UserStatus":{"args":[],"tags":{"Disconnected":[],"Available":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}}}}})},'Register':{'init':author$project$Register$main(
+	elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.0"},"types":{"message":"Main.Msg","aliases":{"Main.Column":{"args":[],"type":"{ columnName : String.String, columnDate : String.String }"},"Main.Post":{"args":[],"type":"{ authorName : String.String, content : String.String, date : String.String }"},"Main.Task":{"args":[],"type":"{ description : String.String }"},"Main.User":{"args":[],"type":"{ first_name : String.String, last_name : String.String, status : Main.UserStatus, rowid : Basics.Int }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"}},"unions":{"Main.Msg":{"args":[],"tags":{"GotUserlist":["List.List Main.User"],"GotColumns":["List.List Main.Column"],"GotTasks":["List.List Main.Task"],"GotPosts":["List.List Main.Post"],"DecodeError":["Json.Decode.Error"],"PostUpdated":["String.String"],"PostSubmitted":[],"NoOp":[]}},"Main.UserStatus":{"args":[],"tags":{"Disconnected":[],"Available":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}}}}})},'Register':{'init':author$project$Register$main(
 	elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.0"},"types":{"message":"Register.Msg","aliases":{"Register.TestEmail":{"args":[],"type":"{ email : String.String, free : Basics.Bool }"}},"unions":{"Register.Msg":{"args":[],"tags":{"EmailUpdated":["String.String"],"FirstNameUpdated":["String.String"],"LastNameUpdated":["String.String"],"Password1Updated":["String.String"],"Password2Updated":["String.String"],"GotTestEmail":["Result.Result Http.Error Register.TestEmail"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));
