@@ -10615,7 +10615,7 @@ var author$project$Main$columnDecoder = A3(
 	elm$json$Json$Decode$map2,
 	author$project$Main$Column,
 	A2(elm$json$Json$Decode$field, 'columnName', elm$json$Json$Decode$string),
-	A2(elm$json$Json$Decode$field, 'columnDate', elm$json$Json$Decode$string));
+	A2(elm$json$Json$Decode$field, 'date', elm$json$Json$Decode$string));
 var author$project$Main$decodeExternalColumnlist = function (val) {
 	var _n0 = A2(
 		elm$json$Json$Decode$decodeValue,

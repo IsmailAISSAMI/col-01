@@ -97,7 +97,7 @@ columnDecoder : Decoder Column
 columnDecoder =
     Decode.map2 Column
         (Decode.field "columnName" Decode.string)
-        (Decode.field "columnDate" Decode.string)
+        (Decode.field "date" Decode.string)
 
 
 decodeExternalUserlist : Value -> Msg

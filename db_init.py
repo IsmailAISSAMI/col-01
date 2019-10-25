@@ -25,8 +25,8 @@ users = [
 ]
 
 columns=[
-    Column("colonne1","1"),
-    Column("colonne2","2")
+    Column("colonne1","ford@betelgeuse.star"),
+    Column("colonne2","ford@betelgeuse.star")
 ]
 
 for user in users:

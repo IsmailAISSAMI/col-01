@@ -197,7 +197,7 @@ def ws_connect():
     cur = db.cursor()
   
     broadcast_user_list(cur)
-    #broadcast_column_list(cur)
+    broadcast_column_list(cur)
 
 @io.on('disconnect')
 def ws_disconnect():
@@ -207,11 +207,8 @@ def ws_disconnect():
     
     db = get_db()
     cur = db.cursor()    
+    
     broadcast_user_list(cur)
-    #broadcast_column_list(cur)
-
-    
-    
 
     
 
